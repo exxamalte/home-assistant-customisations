@@ -5,6 +5,7 @@ https://github.com/exxamalte/home-assistant-customisations
 """
 import logging
 from datetime import timedelta
+from pyexpat import ExpatError
 
 import voluptuous as vol
 import xmltodict
@@ -125,25 +126,28 @@ class NswFireServiceFireDangerSensor(Entity):
         }
         self._state = STATE_UNKNOWN
         if value:
-            value = xmltodict.parse(value)
-            districts = self._attribute_in_structure(
-                value, [XML_FIRE_DANGER_MAP, XML_DISTRICT])
-            if districts and isinstance(districts, list):
-                for district in districts:
-                    if XML_NAME in district:
-                        district_name = district.get(XML_NAME)
-                        if district_name == self._district_name:
-                            # Found it.
-                            for key in SENSOR_ATTRIBUTES:
-                                if key in district:
-                                    text_value = district.get(key)
-                                    conversion = SENSOR_ATTRIBUTES[key][1]
-                                    if conversion:
-                                        text_value = conversion(text_value)
-                                    attributes[SENSOR_ATTRIBUTES[key][0]] \
-                                        = text_value
-                            self._state = STATE_OK
-                            break
+            try:
+                value = xmltodict.parse(value)
+                districts = self._attribute_in_structure(
+                    value, [XML_FIRE_DANGER_MAP, XML_DISTRICT])
+                if districts and isinstance(districts, list):
+                    for district in districts:
+                        if XML_NAME in district:
+                            district_name = district.get(XML_NAME)
+                            if district_name == self._district_name:
+                                # Found it.
+                                for key in SENSOR_ATTRIBUTES:
+                                    if key in district:
+                                        text_value = district.get(key)
+                                        conversion = SENSOR_ATTRIBUTES[key][1]
+                                        if conversion:
+                                            text_value = conversion(text_value)
+                                        attributes[SENSOR_ATTRIBUTES[key][0]] \
+                                            = text_value
+                                self._state = STATE_OK
+                                break
+            except ExpatError as ex:
+                _LOGGER.warning("Unable to parse XML data: %s", ex)
         self._attributes = attributes
 
     @property
