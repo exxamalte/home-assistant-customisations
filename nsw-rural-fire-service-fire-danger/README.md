@@ -12,8 +12,13 @@ sensors to present these details in Home Assistant.
 
 ### Install custom component code
 In your [configuration folder](https://www.home-assistant.io/docs/configuration/)
-create subfolders `<config>/custom_components/sensor` and copy the file
-`nsw_rural_fire_service_fire_danger.py` into that new folder.
+create subfolder `<config>/custom_components` and copy the folder
+`nsw_rural_fire_service_fire_danger` into the new `custom_components` folder.
+
+Please note: This folder structure will work at least from Home Assistant 
+version 0.88 onwards. If you are using an older version, you will need to create
+sub-folders `<config>/custom_components/sensor` and move the `sensor.py` file
+in there and rename it to `nsw_rural_fire_service_fire_danger.py`.
 
 ### Install dependencies
 This custom component uses one third-party library which you may need to install
