@@ -45,11 +45,11 @@ binary_sensor:
 ```
 
 The above configuration will generate a sensor with entity id 
-`binary_sensor.internet_connection_status`. Its status will be `Connected` or
+`binary_sensor.internet_connection_status`. Its state will be `Connected` or
 `Disconnected`, and it will have a few device attributes:
 
 | Attribute        | Description                                                                |
 |------------------|----------------------------------------------------------------------------|
 | device           | "Netgear CM500V"                                                           |
-| ip address       | IP address                                                                 |
+| ip_address       | Internal IP address (default: 192.168.100.1)                               |
 | internet_comment | Descriptive state of the Internet connection, e.g. "In Progress" or "Good" |
