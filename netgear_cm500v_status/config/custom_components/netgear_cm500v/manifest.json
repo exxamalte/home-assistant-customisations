@@ -1,0 +1,9 @@
+{
+  "domain": "netgear_cm500v",
+  "name": "Netgear CM500V Cable Modem Internet Connection Status",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [
+    "@exxamalte"
+  ]
+}
