@@ -1,4 +1,8 @@
-"""Netgear CM500V Cable Modem Internet Connection Status."""
+"""
+Netgear CM500V Cable Modem Internet Connection Status.
+
+https://github.com/exxamalte/home-assistant-customisations
+"""
 import ipaddress
 import logging
 import re
