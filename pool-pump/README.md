@@ -70,11 +70,22 @@ automation:
     action:
       service: homeassistant.turn_off
       entity_id: switch.pool_pump
-  - alias: 'Check Pool Pump'
+  - alias: 'Check Pool Pump Periodically'
     trigger:
       - platform: time_pattern
         minutes: '/5'
         seconds: 00
+    action:
+      service: pool_pump.check
+  - alias: 'Check Pool Pump on Event'
+    trigger:
+      - platform: homeassistant
+        event: start
+      - platform: state
+        entity_id: input_select.pool_pump
+        to: 'Auto'
+      - platform: state
+        entity_id: input_boolean.swimming_season, input_number.run_pool_pump_hours_swimming_season, input_number.run_pool_pump_hours_off_season
     action:
       service: pool_pump.check
 ```
