@@ -3,6 +3,12 @@
 This custom component for Home Assistant can be used to automatically control
 a pool pump that is turned on/off by a switch that Home Assistant can control.
 
+## Minimum requirements
+
+* This has been tested with Home Assistant 0.92.2.
+* A switch supported in Home Assistant that can turn on/off power to your
+  pool pump.
+
 ## Features
 
 * Can control any switch that supports being turned on/off.
