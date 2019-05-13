@@ -27,6 +27,7 @@ ATTR_RUN_PUMP_IN_SWIMMING_SEASON_ENTITY_ID = \
     'run_pool_pump_hours_swimming_season_entity_id'
 ATTR_SWIMMING_SEASON_ENTITY_ID = 'swimming_season_entity_id'
 ATTR_SWITCH_ENTITY_ID = 'switch_entity_id'
+ATTR_WATER_LEVEL_CRITICAL_ENTITY_ID = 'water_level_critical_entity_id'
 
 OFF_SEASON_RUN_1_AFTER_SUNRISE_OFFSET_MINUTES = 120
 OFF_SEASON_BREAK_MINUTES = 60
@@ -43,6 +44,8 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(ATTR_SWIMMING_SEASON_ENTITY_ID): cv.entity_id,
         vol.Required(ATTR_RUN_PUMP_IN_SWIMMING_SEASON_ENTITY_ID): cv.entity_id,
         vol.Required(ATTR_RUN_PUMP_IN_OFF_SEASON_ENTITY_ID): cv.entity_id,
+        vol.Optional(ATTR_WATER_LEVEL_CRITICAL_ENTITY_ID,
+                     default=None): vol.Any(cv.entity_id, None),
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -61,6 +64,8 @@ async def async_setup(hass, config):
         config[DOMAIN][ATTR_POOL_PUMP_MODE_ENTITY_ID]
     hass.data[DOMAIN][ATTR_SWITCH_ENTITY_ID] = \
         config[DOMAIN][ATTR_SWITCH_ENTITY_ID]
+    hass.data[DOMAIN][ATTR_WATER_LEVEL_CRITICAL_ENTITY_ID] = \
+        config[DOMAIN][ATTR_WATER_LEVEL_CRITICAL_ENTITY_ID]
 
     async def check(call):
         """Check if the pool pump should be running now."""
@@ -74,24 +79,30 @@ async def async_setup(hass, config):
         if mode.state == POOL_PUMP_MODE_AUTO:
             manager = PoolPumpManager(hass, now)
             _LOGGER.debug("Manager initialised: %s", manager)
-            run = manager.next_run()
-            _LOGGER.debug("Next run: %s", run)
-            if not run:
-                # Try tomorrow
-                tomorrow = now + timedelta(days=1)
-                next_midnight = tomorrow.replace(hour=0, minute=0, second=0)
-                _LOGGER.debug("Next midnight: %s", next_midnight)
-                manager_tomorrow = PoolPumpManager(hass, next_midnight)
-                _LOGGER.debug("Manager initialised: %s", manager_tomorrow)
-                run = manager_tomorrow.next_run()
+            # schedule = "Unknown"
+            if await manager.is_water_level_critical():
+                schedule = "Water Level Critical"
+            else:
+                run = manager.next_run()
                 _LOGGER.debug("Next run: %s", run)
+                if not run:
+                    # Try tomorrow
+                    tomorrow = now + timedelta(days=1)
+                    next_midnight = tomorrow.replace(
+                        hour=0, minute=0, second=0)
+                    _LOGGER.debug("Next midnight: %s", next_midnight)
+                    manager_tomorrow = PoolPumpManager(hass, next_midnight)
+                    _LOGGER.debug("Manager initialised: %s", manager_tomorrow)
+                    run = manager_tomorrow.next_run()
+                    _LOGGER.debug("Next run: %s", run)
+                schedule = run.pretty_print()
             # Set time range so that this can be displayed in the UI.
-            hass.states.async_set("{}.next_run".format(DOMAIN),
-                                  run.pretty_print())
+            hass.states.async_set("{}.schedule".format(DOMAIN),
+                                  schedule)
             # And now check if the pool pump should be running.
             await manager.check()
         else:
-            hass.states.async_set("{}.next_run".format(DOMAIN),
+            hass.states.async_set("{}.schedule".format(DOMAIN),
                                   "Manual Mode")
 
     hass.services.async_register(DOMAIN, 'check', check)
@@ -198,12 +209,15 @@ class PoolPumpManager:
 
     async def check(self):
         """Check if the pool pump is supposed to run now."""
-        if self._sun.state == STATE_ABOVE_HORIZON:
-            for run in self._runs:
-                if run.run_now(self._now):
-                    _LOGGER.debug("Pool pump should be on now: %s", run)
-                    await self._switch_pool_pump(STATE_ON)
-                    return
+        if await self.is_water_level_critical():
+            _LOGGER.debug("Water level critical - pump should be off")
+        else:
+            if self._sun.state == STATE_ABOVE_HORIZON:
+                for run in self._runs:
+                    if run.run_now(self._now):
+                        _LOGGER.debug("Pool pump should be on now: %s", run)
+                        await self._switch_pool_pump(STATE_ON)
+                        return
         # If we arrive here, the pool pump should be off.
         _LOGGER.debug("Pool pump should be off")
         await self._switch_pool_pump(STATE_OFF)
@@ -217,6 +231,12 @@ class PoolPumpManager:
                 return run
         # If we arrive here, no next run (today).
         return None
+
+    async def is_water_level_critical(self):
+        """Check if water level is critical at the moment."""
+        entity_id = self._hass.data[DOMAIN][
+            ATTR_WATER_LEVEL_CRITICAL_ENTITY_ID]
+        return entity_id and self._hass.states.get(entity_id).state == STATE_ON
 
     @staticmethod
     def _round_to_next_five_minutes(now):
