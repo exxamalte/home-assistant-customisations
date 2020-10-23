@@ -7,6 +7,7 @@ This custom component is implemented as a simple sensor that fetches the feed
 and stores all details of the configured district. You can then use template
 sensors to present these details in Home Assistant.
 
+Please note: This version is compatible with Home Assistant version 0.117 onwards.
 
 ## Installation
 
@@ -21,12 +22,12 @@ sub-folders `<config>/custom_components/sensor` and move the `sensor.py` file
 in there and rename it to `nsw_rural_fire_service_fire_danger.py`.
 
 ### Install dependencies
-This custom component uses one third-party library which you may need to install
-manually:
+This custom component comes with its own `manifest.json` and thus dependencies
+should be installed automatically. 
 
-```
-pip install xmltodict
-```
+Both third-party libraries are also used by the `rest` integration, so they
+are likely already installed if you are using that integration.
+
 
 ## Configuration Example
 
@@ -61,14 +62,6 @@ The following attributes will be available for use in `template` sensors.
 | fire_ban_today        | Indicates whether there is a fire ban today |
 | fire_ban_tomorrow     | Indicates whether there is a fire ban today |
 
-To hide this sensor you can add the following to your configuration:
-
-```yaml
-homeassistant:
-  customize:
-    sensor.fire_danger_in_greater_sydney_region:
-      hidden: true
-```
 
 ### Danger Level Today
 
