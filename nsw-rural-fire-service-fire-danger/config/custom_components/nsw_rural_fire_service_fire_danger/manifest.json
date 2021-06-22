@@ -7,5 +7,6 @@
   "dependencies": [],
   "codeowners": [
     "@exxamalte"
-  ]
+  ],
+  "version": "1.0"
 }
